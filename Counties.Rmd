@@ -1,0 +1,121 @@
+---
+title: "Counties"
+author: "Ethan Kim"
+date: "4/24/2020"
+output: html_document
+---
+
+```{r}
+install.packages(c("httr", "jsonlite"))
+```
+
+```{r cars}
+library(housingData)
+library(httr)
+library(jsonlite)
+```
+
+
+```{r}
+geoCounty
+```
+```{r}
+geoCounty$fips <- as.numeric(as.character(geoCounty$fips))
+```
+
+
+```{r}
+start_date = '2020-03-10'
+end_date = '2020-04-23'
+lat = '32.54'
+lon = '-86.645'
+key = '79e9a3fc92214aad975133413202904' # 'f4733bf95e2e41b2ad2221812201304'  # bf06810cc4db4b5f8b9174938202704 # 59f26cabf1a24eea97d192354202504   # 79e9a3fc92214aad975133413202904 # 5a437d862b9e45dc938190342202904
+```
+
+
+
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+#new_query = sprintf("http://api.worldweatheronline.com/premium/v1/past-weather.ashx?key=%s&q=%s,%s&format=json&date=%s&enddate=%s",key, #lat, lon, start_date, end_date)
+#res = GET(new_query)
+#data = fromJSON(rawToChar(res$content))
+```
+
+
+```{r}
+#rain = data$data$weather[11:12]
+#rain <- rain %>% as.tibble() %>% unnest()
+#rain$precipInches <- as.numeric(rain$precipInches)
+#rainfalls = vector(length = 35)
+```
+
+```{r}
+#rain$pre
+```
+
+```{r}
+temp_df <- data.frame(matrix(ncol = length(fips), nrow = 35))
+sun_hour_df <- data.frame(matrix(ncol = length(fips), nrow = 35))
+rain_df <- data.frame(matrix(ncol = length(fips), nrow = 35))
+
+fips = as.character(geoCounty$fips)
+colnames(sun_hour_df) <- fips
+colnames(temp_df) <- fips
+colnames(rain_df) <- fips
+
+```
+
+
+
+```{r}
+for (i in 2962:3075){
+  lat = geoCounty$lat[i]
+  lon = geoCounty$lon[i]
+  
+  new_query = sprintf("http://api.worldweatheronline.com/premium/v1/past-weather.ashx?key=%s&q=%s,%s&format=json&date=%s&enddate=%s",key, lat, lon, start_date, end_date)
+  res = GET(new_query)
+  data = fromJSON(rawToChar(res$content))
+
+  sun_hour_df$date = data$data$weather$date
+  sun_hour_df[i] = data$data$weather$sunHour
+  
+  temp_df$date = data$data$weather$date
+  temp_df[i] = data$data$weather$avgtempF
+  
+  # Get precipitation data 
+  rain = data$data$weather[11:12]
+  rain <- rain %>% as.tibble() %>% unnest()
+  rain$precipInches <- as.numeric(rain$precipInches)
+  rainfalls = vector(length = 35)
+  for (j in 1:35){
+    start = ((8*j)-7)
+    end = 8*j
+    rainfalls[j] = sum(rain$precipInches[start:end])
+  }
+  rain_df$date = data$data$weather$date
+  rain_df[i] = rainfalls
+}
+```
+
+
+
+```{r}
+temp_df
+```
+
+
+
+```{r}
+write.csv(rain_df, 'rain2.csv')
+```
+```{r}
+write.csv(sun_hour_df, 'sun2.csv')
+```
+```{r}
+write.csv(temp_df, 'temp2.csv')
+```
+
